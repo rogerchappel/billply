@@ -1,0 +1,23 @@
+accounts:
+  leadfinder:
+    account_id: acct_xxx
+    environment: test
+    api_key_env: STRIPE_LEADFINDER_API_KEY
+
+apps:
+  - name: LeadFinder AI
+    stripe_account: leadfinder
+    support_email: support@leadfinder.ai
+    privacy_url: https://leadfinder.ai/privacy
+    terms_url: https://leadfinder.ai/terms
+    products:
+      - name: Starter
+        monthly_price: 29
+      - name: Pro
+        monthly_price: 99
+        yearly_price: 990
+    webhooks:
+      - url: https://leadfinder.ai/api/stripe/webhook
+        events:
+          - checkout.session.completed
+          - customer.subscription.updated
