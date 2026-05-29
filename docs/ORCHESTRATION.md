@@ -2,21 +2,25 @@
 
 ## Intent
 
-Billply should remain safe by default. Local planning, validation, and export
-must work before any Stripe API mutation exists.
+Billply should remain safe by default while making repeatable Stripe setup fast.
+Local planning, validation, and export must work without Stripe credentials.
+Stripe reads require explicit `--stripe`, and Stripe writes require explicit
+`apply --execute`.
 
 ## Workstreams
 
 - Repository setup: docs, contributor policy, release readiness, and validation.
 - Config model: YAML parsing, validation, and deterministic normalized types.
-- Local commands: `plan`, `verify`, `export`, and disabled `apply`.
-- Stripe adapter: future read-only discovery first, then guarded mutation.
+- Local commands: `plan`, `verify`, `export`, and dry-run-first `apply`.
+- Stripe adapter: read current products, prices, portal configurations, and webhooks, then apply guarded idempotent setup.
 
 ## Safety Gates
 
 - Do not store API keys in repository files.
-- Do not mutate Stripe resources from the MVP planner.
-- Do not enable `apply` until a maintainer approves the Stripe adapter design.
+- Do not print Stripe API keys or webhook signing secrets.
+- Do not mutate Stripe resources unless `apply --execute` is passed.
+- Do not use live Stripe keys unless `--live` is passed.
+- Do not delete Stripe resources automatically.
 - Keep destructive changes out of generated plans unless rollback handling exists.
 
 ## Verification

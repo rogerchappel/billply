@@ -4,18 +4,17 @@ Infrastructure-as-code CLI for Stripe SaaS billing.
 
 ## Status
 
-This repository is early-stage. The first implementation is intentionally
-non-mutating: it parses local config, produces plans, validates references, and
-exports deterministic runtime names without calling Stripe APIs.
+This repository is early-stage. It parses local config, produces local plans,
+validates references, exports deterministic runtime names, and includes a
+guarded Stripe adapter for supported setup automation.
 
 Billply exists to make Stripe account setup repeatable as code. The target user
 is an indie hacker, agency, or small SaaS studio managing several products and
 Stripe accounts who wants to avoid spending an hour clicking through the Stripe
 Dashboard for each new product.
 
-The current MVP is a safe local planner. The product direction is to turn that
-configuration into guarded, idempotent Stripe setup automation once the Stripe
-adapter is designed and reviewed.
+The current MVP is safe by default: local commands do not call Stripe, Stripe
+reads require `--stripe`, and Stripe writes require `apply --execute`.
 
 ## Install
 
@@ -62,13 +61,26 @@ pnpm exec tsx src/cli.ts verify --config billply.yaml
 pnpm exec tsx src/cli.ts export --config billply.yaml
 ```
 
+Compare against Stripe or apply supported setup:
+
+```sh
+pnpm exec tsx src/cli.ts plan --stripe --config billply.yaml
+pnpm exec tsx src/cli.ts verify --stripe --config billply.yaml
+pnpm exec tsx src/cli.ts apply --config billply.yaml
+pnpm exec tsx src/cli.ts apply --execute --config billply.yaml
+```
+
+`apply` without `--execute` is a Stripe-backed dry run. `apply --execute`
+creates or updates supported Stripe resources. Live keys are refused unless
+`--live` is also passed.
+
 ## Stripe Authentication
 
-The current billply CLI does not authenticate to Stripe because it does not make
-Stripe API requests. You can run every command in this repository without a
-Stripe account or API key.
+The local planner does not authenticate to Stripe. Commands that use Stripe
+(`plan --stripe`, `verify --stripe`, and `apply`) read the environment variable
+named by `accounts.<alias>.api_key_env`.
 
-When a future Stripe adapter is added, authentication should work like this:
+Authenticate like this:
 
 1. Create or choose a Stripe testing environment first.
    Use a Stripe sandbox or test mode for development. Stripe test API keys
@@ -78,9 +90,8 @@ When a future Stripe adapter is added, authentication should work like this:
 
 2. Create a restricted key when possible.
    Stripe recommends restricted API keys over broad secret keys where a task
-   only needs limited permissions. A future billply adapter should document the
-   minimum permissions for read-only drift checks separately from write-capable
-   apply operations.
+   only needs limited permissions. Use read permissions for `plan --stripe` and
+   `verify --stripe`; use write permissions only when running `apply --execute`.
    Sources:
    - https://docs.stripe.com/keys
    - https://docs.stripe.com/keys-best-practices
@@ -101,8 +112,7 @@ When a future Stripe adapter is added, authentication should work like this:
        api_key_env: STRIPE_LEADFINDER_API_KEY
    ```
 
-5. Export the key in your shell only when running a future Stripe-backed
-   command:
+5. Export the key in your shell only when running a Stripe-backed command:
 
    ```sh
    export STRIPE_LEADFINDER_API_KEY=<test_or_restricted_key_from_dashboard>
@@ -151,15 +161,17 @@ Billply can do these things today:
 - Validate that apps reference known account aliases.
 - Plan products, prices, customer portal defaults, checkout defaults, and
   webhook endpoint intent without touching Stripe.
+- Compare config against Stripe with `plan --stripe` and `verify --stripe`.
+- Apply supported Stripe setup with `apply --execute`.
 - Export deterministic environment variable names and lookup keys.
-- Refuse `billply apply`; live Stripe mutation is intentionally disabled.
+- Refuse live Stripe keys unless `--live` is explicitly passed.
 
 The current MVP does not do these things yet:
 
-- Create, update, archive, or delete Stripe resources.
-- Read drift from a real Stripe account.
 - Create Checkout Sessions or Payment Links.
-- Create webhook endpoints or retrieve signing secrets.
+- Retrieve or print webhook signing secrets.
+- Delete Stripe resources.
+- Archive products automatically when they are removed from YAML.
 - Manage API keys, secrets, team access, account activation, payout settings,
   payment method preferences, tax obligations, legal policies, or compliance
   decisions.
@@ -245,18 +257,19 @@ automation:
    restrictions, and customer communications are business decisions. Billply can
    require the URLs in config, but it cannot decide whether they are correct.
 
-## Future Stripe Adapter Scope
+## Stripe Adapter Scope
 
-Stripe's APIs can support a future implementation for several parts of the PRD,
-but those should still be dry-run-first and idempotent.
+Billply currently automates the repeatable Stripe resources below. The adapter
+is dry-run-first, idempotent, and marks managed resources with metadata so they
+can be found on later runs.
 
-| Area | API-supported future work | Boundary |
+| Area | Supported work | Boundary |
 | --- | --- | --- |
-| Products | Create, retrieve, update, archive, and import products. | Do not delete production products by default. |
-| Prices | Create recurring and one-time prices; archive by setting `active=false`. | Price amounts are effectively versioned: if the amount changes, create a new price and archive the old one. Stripe says used prices cannot be deleted through the API. |
+| Products | Create and update managed products. | Does not delete products. |
+| Prices | Create recurring, one-time, and usage prices. Replaces changed prices by creating a new price and archiving the old price. | Price amounts are effectively versioned: if the amount changes, create a new price and archive the old one. Stripe says used prices cannot be deleted through the API. |
 | Customer portal | Create and update billing portal configurations. | Portal sessions still require application logic and real customer IDs. |
-| Webhook endpoints | Create, retrieve, update, list, and delete endpoints. | The receiving app, HTTPS deployment, signature verification, and secret storage remain outside billply. |
-| Checkout | Generate app snippets or validate price references for Checkout Sessions. | The SaaS app must create sessions at runtime and own fulfillment. |
+| Webhook endpoints | Create and update endpoints and enabled events. | The receiving app, HTTPS deployment, signature verification, and secret storage remain outside billply. |
+| Checkout | Export deterministic lookup keys for Checkout integration. | The SaaS app must create sessions at runtime and own fulfillment. |
 | Account branding/business profile | Some connected-account fields are API-updatable. | Stripe says updating your own account should be done in the Dashboard. |
 
 Useful Stripe references:
@@ -317,11 +330,10 @@ pnpm exec tsx src/cli.ts verify --config /tmp/bad-billply.yaml
 Expected result: the command exits non-zero and reports that
 `apps[0].stripe_account` references an unknown account.
 
-Do not use a live Stripe API key to test this MVP. The current CLI does not
-make Stripe API requests, so live credentials add risk without increasing test
-coverage.
+Do not use a live Stripe API key for routine tests. The repository test suite
+uses mocked Stripe clients and does not need real credentials.
 
-To test future Stripe authentication without touching live data:
+To test Stripe authentication without touching live data:
 
 1. Create a sandbox or use test mode in Stripe.
 2. Create a restricted test key with the minimum permissions required by the
@@ -340,6 +352,25 @@ To test future Stripe authentication without touching live data:
 
 5. Confirm the key itself never appears in `git diff`, shell history you plan
    to share, CI logs, or PR comments.
+
+Then run a Stripe-backed dry run:
+
+```sh
+pnpm exec tsx src/cli.ts plan --stripe --config billply.yaml
+pnpm exec tsx src/cli.ts apply --config billply.yaml
+```
+
+When the dry run is correct, apply to the test account:
+
+```sh
+pnpm exec tsx src/cli.ts apply --execute --config billply.yaml
+```
+
+Only use a live key when you intend to touch live Stripe resources:
+
+```sh
+pnpm exec tsx src/cli.ts apply --execute --live --config billply.yaml
+```
 
 ## Verify
 
