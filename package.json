@@ -20,8 +20,9 @@
     "build": "tsc",
     "check": "tsc --noEmit",
     "test": "pnpm build && node --test test/*.test.js",
+    "smoke": "pnpm exec tsx src/cli.ts plan --config examples/billply.yaml && pnpm exec tsx src/cli.ts verify --config examples/billply.yaml && pnpm exec tsx src/cli.ts export --config examples/billply.yaml",
     "package:smoke": "npm pack --dry-run",
-    "release:check": "pnpm check && pnpm test && pnpm run package:smoke"
+    "release:check": "pnpm check && pnpm test && pnpm smoke && pnpm run package:smoke"
   },
   "keywords": [
     "stripe",
