@@ -7,17 +7,17 @@
 - Implement `billply plan` for local previews.
 - Implement `billply verify` for local config reference checks.
 - Implement `billply export` for deterministic runtime lookup names.
-- Keep `billply apply` disabled until the Stripe adapter has an approved safety design.
+- Implement guarded Stripe setup for products, prices, customer portal configurations, and webhook endpoints.
+- Keep live Stripe writes behind explicit `--execute --live` flags.
 
 ## Next
 
-- Define the Stripe adapter interface behind a dry-run-first state engine.
 - Add fixture-based tests for portal, checkout, and webhook planning.
 - Add schema documentation for `billply.yaml`.
 - Add account cloning design notes before touching live Stripe data.
 
 ## Later
 
-- Implement Stripe read-only drift detection.
-- Add guarded Stripe mutation support with explicit confirmation and rollback notes.
 - Add CI examples for drift verification on pull requests.
+- Add account cloning from an existing Stripe account into YAML.
+- Add Checkout integration snippets for app runtimes.
