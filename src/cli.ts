@@ -8,9 +8,25 @@ import {
   renderPlan,
   verifyConfig
 } from './index.js';
+import {
+  hasStripeChanges,
+  renderStripeSyncResult,
+  syncStripeConfig
+} from './stripe-adapter.js';
+import { createStripeBillingClient } from './stripe-client.js';
 
 type ConfigCommandOptions = {
   config: string;
+};
+
+type StripeCommandOptions = ConfigCommandOptions & {
+  live?: boolean;
+  stripe?: boolean;
+};
+
+type ApplyCommandOptions = ConfigCommandOptions & {
+  execute?: boolean;
+  live?: boolean;
 };
 
 type ExportCommandOptions = ConfigCommandOptions & {
@@ -28,9 +44,20 @@ program
   .command('plan')
   .description('Preview the non-destructive Stripe resources described by config.')
   .option('-c, --config <path>', 'Path to billply YAML config.', 'billply.yaml')
-  .action(async (options: ConfigCommandOptions) => {
+  .option('--stripe', 'Compare config against Stripe using account api_key_env values.')
+  .option('--live', 'Allow live Stripe keys. Omit this flag for sandbox/test-mode only.')
+  .action(async (options: StripeCommandOptions) => {
     await run(async () => {
       const config = await loadConfig(options.config);
+
+      if (options.stripe) {
+        const result = await syncStripeConfig(config, createStripeBillingClient, {
+          allowLive: Boolean(options.live)
+        });
+        console.log(renderStripeSyncResult(result));
+        return;
+      }
+
       console.log(renderPlan(buildPlan(config)));
     });
   });
@@ -39,9 +66,26 @@ program
   .command('verify')
   .description('Validate config and report local reference issues.')
   .option('-c, --config <path>', 'Path to billply YAML config.', 'billply.yaml')
-  .action(async (options: ConfigCommandOptions) => {
+  .option('--stripe', 'Verify config against Stripe using account api_key_env values.')
+  .option('--live', 'Allow live Stripe keys. Omit this flag for sandbox/test-mode only.')
+  .action(async (options: StripeCommandOptions) => {
     await run(async () => {
       const config = await loadConfig(options.config);
+
+      if (options.stripe) {
+        const result = await syncStripeConfig(config, createStripeBillingClient, {
+          allowLive: Boolean(options.live)
+        });
+
+        console.log(renderStripeSyncResult(result));
+
+        if (hasStripeChanges(result)) {
+          process.exitCode = 1;
+        }
+
+        return;
+      }
+
       const warnings = verifyConfig(config);
 
       if (warnings.length === 0) {
@@ -88,10 +132,24 @@ program
 
 program
   .command('apply')
-  .description('Reserved for the future Stripe adapter.')
-  .action(() => {
-    console.error('billply apply is intentionally disabled in this MVP. Run billply plan first; no Stripe API mutations are implemented yet.');
-    process.exitCode = 2;
+  .description('Apply supported Stripe setup changes. Defaults to a dry run.')
+  .option('-c, --config <path>', 'Path to billply YAML config.', 'billply.yaml')
+  .option('--execute', 'Write changes to Stripe. Without this flag, apply only prints a dry run.')
+  .option('--live', 'Allow live Stripe keys. Omit this flag for sandbox/test-mode only.')
+  .action(async (options: ApplyCommandOptions) => {
+    await run(async () => {
+      const config = await loadConfig(options.config);
+      const result = await syncStripeConfig(config, createStripeBillingClient, {
+        allowLive: Boolean(options.live),
+        execute: Boolean(options.execute)
+      });
+
+      console.log(renderStripeSyncResult(result));
+
+      if (!options.execute && hasStripeChanges(result)) {
+        process.exitCode = 2;
+      }
+    });
   });
 
 await program.parseAsync(process.argv);
