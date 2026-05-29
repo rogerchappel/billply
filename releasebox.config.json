@@ -1,0 +1,26 @@
+{
+  "projectType": "node-cli",
+  "packageManagers": [
+    "pnpm",
+    "github-release"
+  ],
+  "smoke": {
+    "commands": [
+      [
+        "pnpm",
+        "test"
+      ],
+      [
+        "npm",
+        "pack",
+        "--dry-run"
+      ]
+    ]
+  },
+  "release": {
+    "mode": "reviewed",
+    "createGithubRelease": true,
+    "publishNpm": false,
+    "updateHomebrew": false
+  }
+}
