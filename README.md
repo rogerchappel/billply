@@ -8,9 +8,14 @@ This repository is early-stage. The first implementation is intentionally
 non-mutating: it parses local config, produces plans, validates references, and
 exports deterministic runtime names without calling Stripe APIs.
 
-Billply is not a Stripe replacement and is not a payments processor. Treat it as
-a local planning and configuration discipline for SaaS billing until a Stripe
-adapter is explicitly designed, reviewed, and implemented.
+Billply exists to make Stripe account setup repeatable as code. The target user
+is an indie hacker, agency, or small SaaS studio managing several products and
+Stripe accounts who wants to avoid spending an hour clicking through the Stripe
+Dashboard for each new product.
+
+The current MVP is a safe local planner. The product direction is to turn that
+configuration into guarded, idempotent Stripe setup automation once the Stripe
+adapter is designed and reviewed.
 
 ## Install
 
@@ -138,7 +143,7 @@ keys authenticate requests, and that test and live keys determine whether a
 request targets test data or live data.
 Source: https://docs.stripe.com/api/authentication
 
-## Current Boundaries
+## Current MVP
 
 Billply can do these things today:
 
@@ -149,7 +154,7 @@ Billply can do these things today:
 - Export deterministic environment variable names and lookup keys.
 - Refuse `billply apply`; live Stripe mutation is intentionally disabled.
 
-Billply cannot do these things yet:
+The current MVP does not do these things yet:
 
 - Create, update, archive, or delete Stripe resources.
 - Read drift from a real Stripe account.
@@ -161,13 +166,14 @@ Billply cannot do these things yet:
 
 ## Manual Stripe Setup
 
-Some work should stay manual even after a future Stripe adapter exists. Stripe
-requires account owners to verify business details and complete live account
-requirements before processing real payments. Stripe also recommends completing
-its live account checklist, including two-factor authentication, statement
-descriptor review, notification settings, fraud/dispute readiness, bank account
-review, team access, and restricted-business review. See Stripe's account setup
-and account checklist docs:
+Some work will remain manual even when billply can automate most repeatable
+Stripe setup. Stripe requires account owners to verify business details and
+complete live account requirements before processing real payments. Stripe also
+recommends completing its live account checklist, including two-factor
+authentication, statement descriptor review, notification settings,
+fraud/dispute readiness, bank account review, team access, and
+restricted-business review. See Stripe's account setup and account checklist
+docs:
 
 - https://docs.stripe.com/get-started/account/set-up
 - https://docs.stripe.com/get-started/account/checklist
