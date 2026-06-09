@@ -18,6 +18,14 @@ reads require `--stripe`, and Stripe writes require `apply --execute`.
 
 ## Install
 
+Install the CLI package:
+
+```sh
+npm install -g billply
+```
+
+For local development:
+
 ```sh
 pnpm install
 pnpm build
@@ -54,6 +62,14 @@ apps:
 ```
 
 Run the local planner:
+
+```sh
+billply plan --config billply.yaml
+billply verify --config billply.yaml
+billply export --config billply.yaml
+```
+
+From a source checkout:
 
 ```sh
 pnpm exec tsx src/cli.ts plan --config billply.yaml
