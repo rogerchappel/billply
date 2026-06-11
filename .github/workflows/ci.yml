@@ -67,19 +67,5 @@ jobs:
         if: hashFiles('scripts/validate.sh') != ''
         run: bash scripts/validate.sh
 
-      - name: Run optional Node checks
-        if: hashFiles('scripts/validate.sh') == ''
-        run: |
-          set -euo pipefail
-
-          if [ ! -f package.json ]; then
-            echo "No package.json found; skipping Node checks."
-            echo "TODO: add install, lint, test, typecheck, or build commands when this template becomes an app or package."
-            exit 0
-          fi
-
-          pnpm install --frozen-lockfile
-          pnpm lint --if-present
-          pnpm test --if-present
-          pnpm typecheck --if-present
-          pnpm build --if-present
+      - name: Run release check
+        run: pnpm run release:check
