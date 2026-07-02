@@ -419,6 +419,7 @@ MIT
 Run the release-readiness checks before publishing or cutting a PR:
 
 ```bash
+pnpm test
 npm run check
 npm run build
 npm run test
