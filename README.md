@@ -298,6 +298,20 @@ Useful Stripe references:
 - Webhook endpoints API: https://docs.stripe.com/api/webhook_endpoints
 - Accounts API boundary: https://docs.stripe.com/api/accounts/update
 
+## Limitations
+
+- Billply covers a focused Stripe setup path: products, prices, customer portal
+  defaults, checkout defaults, webhook endpoint intent, and guarded apply
+  support for the documented resource set. It is not a full Stripe account
+  migration tool.
+- Local plans are only as accurate as the YAML config and Stripe API response
+  available at runtime. Review the dry-run output before applying changes,
+  especially when existing Dashboard-managed resources are present.
+- The CLI does not manage taxes, coupons, promotions, subscriptions, customer
+  data, invoices, entitlements, disputes, or data backfills.
+- Live mode requires explicit `--live` and should be tested in a Stripe sandbox
+  or test mode first.
+
 ## Test
 
 Run the full local validation path:
