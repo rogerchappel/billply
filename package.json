@@ -7,10 +7,14 @@
     "billply": "./dist/cli.js"
   },
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
-    "files": [
+  "files": [
     "dist",
     "docs",
     "examples",
