@@ -442,7 +442,9 @@ npm run package:smoke
 npm run release:check
 ```
 
-Use `npm run package:smoke` or `npm pack --dry-run` to confirm the published tarball includes the support docs and runnable package contents.
+Use `npm run package:smoke` to build the CLI, verify the published `billply`
+bin target, confirm the example config and support docs are present in the
+package allowlist, and print the `npm pack --dry-run` tarball contents.
 
 ## Release Verification
 
