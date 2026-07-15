@@ -14,14 +14,14 @@ Use this checklist before cutting a release or asking a reviewer to trust the pa
 
 ## Verification Commands
 
-- `npm run check`: `tsc --noEmit`
-- `npm run test`: `pnpm build && node --test test/*.test.js`
-- `npm run build`: `tsc`
-- `npm run smoke`: `pnpm exec tsx src/cli.ts plan --config examples/billply.yaml && pnpm exec tsx src/cli.ts verify --config examples/billply.yaml && pnpm exec tsx src/cli.ts export --config examples/billply.yaml`
-- `npm run package:smoke`: `npm pack --dry-run`
-- `npm run release:check`: `pnpm check && pnpm test && pnpm smoke && pnpm run package:smoke`
+- `pnpm check`: `tsc --noEmit`
+- `pnpm test`: `pnpm build && node --test test/*.test.js`
+- `pnpm build`: `tsc`
+- `pnpm smoke`: `pnpm exec tsx src/cli.ts plan --config examples/billply.yaml && pnpm exec tsx src/cli.ts verify --config examples/billply.yaml && pnpm exec tsx src/cli.ts export --config examples/billply.yaml`
+- `pnpm run package:smoke`: build, verify the package metadata and dry-run tarball contents, then run `npm pack --dry-run`
+- `pnpm run release:check`: `pnpm check && pnpm test && pnpm smoke && pnpm run package:smoke`
 
-Run `npm run release:check` when available before opening a release PR. When a command is unavailable, use the closest listed command and record the reason in the PR.
+Run `pnpm run release:check` when available before opening a release PR. When a command is unavailable, use the closest listed command and record the reason in the PR.
 
 ## Reviewer Notes
 
