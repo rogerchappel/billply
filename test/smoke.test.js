@@ -23,23 +23,23 @@ function runCli(args) {
 }
 
 describe('billply smoke', () => {
-  it('should handle plan with example config', () => {
-    try {
-      const { out } = runCli('plan --config examples/billply.yaml');
-      assert.ok(out.length > 0, 'should produce plan output');
-    } catch (e) {
-      // CLI may error on example config — any output counts as a pass
-      assert.ok(e.message !== 'No working CLI runner found', 'CLI runner must be available');
-    }
+  it('plans the example config without destructive changes', () => {
+    const { out, stderr } = runCli('plan --config examples/billply.yaml');
+
+    assert.equal(stderr, '');
+    assert.match(out, /Configure customer portal for LeadFinder AI/);
+    assert.match(out, /Create monthly recurring price \$99\.00 for Pro/);
+    assert.match(out, /No destructive changes/);
   });
 
-  it('should require config for verify', () => {
-    try {
-      const { out, stderr } = runCli('verify');
-      // If it somehow succeeds, that's fine too
-      assert.ok(out.length > 0 || stderr.length > 0, 'should produce output');
-    } catch (e) {
-      assert.ok(e.message !== 'No working CLI runner found', 'CLI runner must be available');
-    }
+  it('verifies and exports deterministic fixture values', () => {
+    const verify = runCli('verify --config examples/billply.yaml');
+    assert.equal(verify.stderr, '');
+    assert.match(verify.out, /Config valid/);
+
+    const exported = runCli('export --config examples/billply.yaml');
+    assert.equal(exported.stderr, '');
+    assert.match(exported.out, /STRIPE_LEADFINDER_ACCOUNT_ID=acct_xxx/);
+    assert.match(exported.out, /STRIPE_LEADFINDER_AI_PRO_MONTHLY_LOOKUP_KEY=leadfinder-ai-pro-monthly/);
   });
 });
