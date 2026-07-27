@@ -332,6 +332,12 @@ pnpm exec tsx src/cli.ts verify --config examples/billply.yaml
 pnpm exec tsx src/cli.ts export --config examples/billply.yaml
 ```
 
+Currency values use Stripe's three-letter ISO currency-code format (for
+example, `usd`, `AUD`, or `jpy`). Billply accepts either letter case and
+normalizes configured values to lowercase. A product may set its own
+`currency`; otherwise, it inherits its app's currency, which defaults to
+`usd`.
+
 Expected results:
 
 - `plan` prints planned resources and ends with `No destructive changes`.
