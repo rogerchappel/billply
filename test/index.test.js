@@ -62,6 +62,50 @@ apps:
   );
 });
 
+test('parseConfig rejects an invalid app currency', () => {
+  assert.throws(
+    () => parseConfig(validConfig.replace('    products:', '    currency: definitely-not-a-currency\n    products:')),
+    (error) => {
+      assert.ok(error instanceof ConfigError);
+      assert.deepEqual(error.issues, [
+        'apps[0].currency must be a three-letter ISO currency code when provided.'
+      ]);
+      return true;
+    }
+  );
+});
+
+test('parseConfig rejects an invalid product currency override', () => {
+  assert.throws(
+    () => parseConfig(validConfig.replace('        monthly_price: 29', '        currency: dollars\n        monthly_price: 29')),
+    (error) => {
+      assert.ok(error instanceof ConfigError);
+      assert.deepEqual(error.issues, [
+        'apps[0].products[0].currency must be a three-letter ISO currency code when provided.'
+      ]);
+      return true;
+    }
+  );
+});
+
+test('parseConfig accepts and normalizes three-letter currency codes', () => {
+  const config = parseConfig(
+    validConfig
+      .replace('    products:', '    currency: EUR\n    products:')
+      .replace('        monthly_price: 29', '        currency: JpY\n        monthly_price: 29')
+  );
+
+  assert.equal(config.apps[0].currency, 'eur');
+  assert.equal(config.apps[0].products[0].currency, 'jpy');
+});
+
+test('parseConfig gives products the normalized app currency by default', () => {
+  const config = parseConfig(validConfig.replace('    products:', '    currency: AUD\n    products:'));
+
+  assert.equal(config.apps[0].products[0].currency, 'aud');
+  assert.equal(config.apps[0].products[1].currency, 'aud');
+});
+
 test('buildPlan renders a non-destructive local plan', () => {
   const plan = buildPlan(parseConfig(validConfig));
   const output = renderPlan(plan);

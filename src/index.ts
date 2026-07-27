@@ -222,7 +222,7 @@ function parseApps(value: unknown, accounts: Record<string, AccountConfig>, issu
     const supportEmail = readOptionalString(rawApp, 'support_email', location, issues);
     const privacyUrl = readOptionalString(rawApp, 'privacy_url', location, issues);
     const termsUrl = readOptionalString(rawApp, 'terms_url', location, issues);
-    const currency = readOptionalString(rawApp, 'currency', location, issues) ?? 'usd';
+    const currency = readOptionalCurrency(rawApp, 'currency', location, issues) ?? 'usd';
     const products = parseProducts(rawApp.products, currency, `${location}.products`, issues);
     const webhooks = parseWebhooks(rawApp.webhooks, `${location}.webhooks`, issues);
 
@@ -263,7 +263,7 @@ function parseProducts(value: unknown, defaultCurrency: string, location: string
 
     const name = readRequiredString(rawProduct, 'name', productLocation, issues);
     const lookupKeyValue = readOptionalString(rawProduct, 'lookup_key', productLocation, issues);
-    const currency = readOptionalString(rawProduct, 'currency', productLocation, issues) ?? defaultCurrency;
+    const currency = readOptionalCurrency(rawProduct, 'currency', productLocation, issues) ?? defaultCurrency;
     const monthlyPrice = readOptionalAmount(rawProduct, 'monthly_price', productLocation, issues);
     const yearlyPrice = readOptionalAmount(rawProduct, 'yearly_price', productLocation, issues);
     const oneTimePrice = readOptionalAmount(rawProduct, 'one_time_price', productLocation, issues);
@@ -359,6 +359,21 @@ function readOptionalString(record: UnknownRecord, key: string, location: string
   }
 
   return value;
+}
+
+function readOptionalCurrency(record: UnknownRecord, key: string, location: string, issues: string[]): string | undefined {
+  const value = record[key];
+
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== 'string' || !/^[a-zA-Z]{3}$/.test(value)) {
+    issues.push(`${location}.${key} must be a three-letter ISO currency code when provided.`);
+    return undefined;
+  }
+
+  return value.toLowerCase();
 }
 
 function readOptionalAmount(record: UnknownRecord, key: string, location: string, issues: string[]): number | undefined {
