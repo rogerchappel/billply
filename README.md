@@ -18,13 +18,24 @@ reads require `--stripe`, and Stripe writes require `apply --execute`.
 
 ## Install
 
-Install the CLI package:
+> [!IMPORTANT]
+> `billply` is not currently published to the npm registry. The command
+> `npm install -g billply` will not work until the first release is published.
+
+Install the CLI from a source checkout using a local package tarball:
 
 ```sh
-npm install -g billply
+git clone https://github.com/rogerchappel/billply.git
+cd billply
+corepack enable
+pnpm install --frozen-lockfile
+pnpm build
+pnpm pack
+npm install -g ./billply-0.1.0.tgz
+billply --help
 ```
 
-For local development:
+For local development without a global install:
 
 ```sh
 pnpm install
