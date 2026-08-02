@@ -1,5 +1,6 @@
 import {
   ConfigError,
+  currencyMinorUnitExponent,
   type AccountConfig,
   type AppConfig,
   type BillplyConfig,
@@ -514,7 +515,7 @@ function desiredPrice(
     label,
     lookupKey: lookupKey(app, product, kind),
     product,
-    unitAmount: amountToMinorUnits(amount)
+    unitAmount: amountToMinorUnits(amount, product.currency)
   };
 }
 
@@ -691,8 +692,8 @@ function nullable(value: string | null | undefined): string | undefined {
   return value ?? undefined;
 }
 
-function amountToMinorUnits(amount: number): number {
-  return Math.round(amount * 100);
+function amountToMinorUnits(amount: number, currency: string): number {
+  return Math.round(amount * (10 ** currencyMinorUnitExponent(currency)));
 }
 
 function formatAmount(amount: number, currency: string): string {

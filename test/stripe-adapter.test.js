@@ -66,6 +66,39 @@ test('syncStripeConfig executes supported Stripe setup and is idempotent', async
   assert.equal(hasStripeChanges(secondRun), false);
 });
 
+test('syncStripeConfig converts configured major-unit amounts using the currency precision', async () => {
+  const currencyConfig = parseConfig(`
+accounts:
+  billing:
+    account_id: acct_xxx
+    api_key_env: STRIPE_BILLING_API_KEY
+apps:
+  - name: Currency Shop
+    stripe_account: billing
+    products:
+      - name: Japan Pass
+        currency: JPY
+        one_time_price: 500
+      - name: US Pass
+        currency: USD
+        one_time_price: 29
+`);
+  const client = createFakeStripeClient();
+
+  await syncStripeConfig(currencyConfig, () => client, {
+    env: { STRIPE_BILLING_API_KEY: 'sk_test_example' },
+    execute: true
+  });
+
+  assert.deepEqual(
+    client.calls.createPrice.map(({ currency, unit_amount }) => ({ currency, unit_amount })),
+    [
+      { currency: 'jpy', unit_amount: 500 },
+      { currency: 'usd', unit_amount: 2900 }
+    ]
+  );
+});
+
 test('syncStripeConfig replaces changed prices without deleting old prices', async () => {
   const client = createFakeStripeClient();
   const env = {

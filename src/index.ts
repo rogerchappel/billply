@@ -54,6 +54,15 @@ export type PlanResult = {
 
 type UnknownRecord = Record<string, unknown>;
 
+const ZERO_DECIMAL_CURRENCIES = new Set([
+  'bif', 'clp', 'djf', 'gnf', 'jpy', 'kmf', 'krw', 'mga', 'pyg', 'rwf',
+  'ugx', 'vnd', 'vuv', 'xaf', 'xof', 'xpf'
+]);
+
+export function currencyMinorUnitExponent(currency: string): number {
+  return ZERO_DECIMAL_CURRENCIES.has(currency.toLowerCase()) ? 0 : 2;
+}
+
 export class ConfigError extends Error {
   readonly issues: string[];
 
@@ -269,6 +278,11 @@ function parseProducts(value: unknown, defaultCurrency: string, location: string
     const oneTimePrice = readOptionalAmount(rawProduct, 'one_time_price', productLocation, issues);
     const usagePrice = readOptionalAmount(rawProduct, 'usage_price', productLocation, issues);
 
+    validateAmountPrecision(monthlyPrice, 'monthly_price', currency, productLocation, issues);
+    validateAmountPrecision(yearlyPrice, 'yearly_price', currency, productLocation, issues);
+    validateAmountPrecision(oneTimePrice, 'one_time_price', currency, productLocation, issues);
+    validateAmountPrecision(usagePrice, 'usage_price', currency, productLocation, issues);
+
     if (monthlyPrice === undefined && yearlyPrice === undefined && oneTimePrice === undefined && usagePrice === undefined) {
       issues.push(`${productLocation} must define at least one price.`);
     }
@@ -389,6 +403,26 @@ function readOptionalAmount(record: UnknownRecord, key: string, location: string
   }
 
   return value;
+}
+
+function validateAmountPrecision(
+  amount: number | undefined,
+  key: string,
+  currency: string,
+  location: string,
+  issues: string[]
+): void {
+  if (amount === undefined) {
+    return;
+  }
+
+  const exponent = currencyMinorUnitExponent(currency);
+  const factor = 10 ** exponent;
+  const scaled = amount * factor;
+  const tolerance = Number.EPSILON * Math.max(1, Math.abs(scaled)) * 4;
+  if (Math.abs(scaled - Math.round(scaled)) > tolerance) {
+    issues.push(`${location}.${key} cannot have more than ${exponent} decimal places for ${currency.toUpperCase()}.`);
+  }
 }
 
 function lookupKey(app: AppConfig, product: ProductConfig, kind: string): string {

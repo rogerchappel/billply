@@ -106,6 +106,18 @@ test('parseConfig gives products the normalized app currency by default', () => 
   assert.equal(config.apps[0].products[1].currency, 'aud');
 });
 
+test('parseConfig rejects amounts finer than the currency minor unit', () => {
+  assert.throws(
+    () => parseConfig(validConfig
+      .replace('        monthly_price: 29', '        currency: JPY\n        monthly_price: 29.5')),
+    (error) => {
+      assert.ok(error instanceof ConfigError);
+      assert.match(error.message, /monthly_price cannot have more than 0 decimal places for JPY/);
+      return true;
+    }
+  );
+});
+
 test('buildPlan renders a non-destructive local plan', () => {
   const plan = buildPlan(parseConfig(validConfig));
   const output = renderPlan(plan);
