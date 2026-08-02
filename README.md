@@ -349,6 +349,12 @@ normalizes configured values to lowercase. A product may set its own
 `currency`; otherwise, it inherits its app's currency, which defaults to
 `usd`.
 
+Price amounts are configured in the currency's major unit. For example,
+`29` USD is sent to Stripe as `2900` cents, while `500` JPY is sent as `500`
+yen. Billply supports Stripe's zero-decimal currencies and the usual
+two-decimal currencies; configured amounts must fit that precision (so a
+fractional JPY amount is invalid).
+
 Expected results:
 
 - `plan` prints planned resources and ends with `No destructive changes`.
