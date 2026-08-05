@@ -355,6 +355,15 @@ yen. Billply supports Stripe's zero-decimal currencies and the usual
 two-decimal currencies; configured amounts must fit that precision (so a
 fractional JPY amount is invalid).
 
+Webhook URLs must be absolute `http://` or `https://` URLs. Each webhook event
+must be `*` or a Stripe-style dot-separated identifier such as
+`checkout.session.completed`; empty or malformed identifiers are rejected.
+
+App and product names (or a product's explicit `lookup_key`) must derive unique
+Stripe lookup keys and exported environment-variable names after normalization.
+For example, two monthly products named `Pro` in the same app are invalid
+because both would derive the same lookup and runtime keys.
+
 Expected results:
 
 - `plan` prints planned resources and ends with `No destructive changes`.
