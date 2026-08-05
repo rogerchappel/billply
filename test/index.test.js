@@ -118,6 +118,47 @@ test('parseConfig rejects amounts finer than the currency minor unit', () => {
   );
 });
 
+test('parseConfig rejects malformed and non-HTTP webhook URLs', () => {
+  for (const url of ['not-a-url', 'ftp://example.com/webhook']) {
+    assert.throws(
+      () => parseConfig(validConfig.replace('https://leadfinder.ai/api/stripe/webhook', url)),
+      (error) => {
+        assert.ok(error instanceof ConfigError);
+        assert.match(error.message, /url must be a valid HTTP or HTTPS URL/);
+        return true;
+      }
+    );
+  }
+});
+
+test('parseConfig rejects empty and malformed webhook event identifiers', () => {
+  for (const event of ["''", 'not.a.real.event!', 'checkout']) {
+    assert.throws(
+      () => parseConfig(validConfig.replace('checkout.session.completed', event)),
+      (error) => {
+        assert.ok(error instanceof ConfigError);
+        assert.match(error.message, /events\[0\] must be a valid Stripe event identifier/);
+        return true;
+      }
+    );
+  }
+});
+
+test('parseConfig rejects duplicate derived lookup and runtime keys', () => {
+  assert.throws(
+    () => parseConfig(validConfig.replace(
+      '      - name: Pro',
+      '      - name: Starter\n        monthly_price: 49\n      - name: Pro'
+    )),
+    (error) => {
+      assert.ok(error instanceof ConfigError);
+      assert.match(error.message, /duplicate Stripe lookup key "leadfinder-ai-starter-monthly"/);
+      assert.match(error.message, /duplicate runtime environment variable "STRIPE_LEADFINDER_AI_STARTER_MONTHLY_LOOKUP_KEY"/);
+      return true;
+    }
+  );
+});
+
 test('buildPlan renders a non-destructive local plan', () => {
   const plan = buildPlan(parseConfig(validConfig));
   const output = renderPlan(plan);
