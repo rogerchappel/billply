@@ -103,6 +103,7 @@ export function parseConfig(source: string): BillplyConfig {
 
   const accounts = parseAccounts(parsed.accounts, issues);
   const apps = parseApps(parsed.apps, accounts, issues);
+  validateDerivedKeys(accounts, apps, issues);
 
   if (issues.length > 0) {
     throw new ConfigError(issues);
@@ -324,8 +325,18 @@ function parseWebhooks(value: unknown, location: string, issues: string[]): Webh
     const url = readRequiredString(rawWebhook, 'url', webhookLocation, issues);
     const rawEvents = rawWebhook.events;
 
-    if (!Array.isArray(rawEvents) || rawEvents.length === 0 || !rawEvents.every((event) => typeof event === 'string' && event.length > 0)) {
-      issues.push(`${webhookLocation}.events must be a non-empty list of strings.`);
+    if (url && !isHttpUrl(url)) {
+      issues.push(`${webhookLocation}.url must be a valid HTTP or HTTPS URL.`);
+    }
+
+    if (!Array.isArray(rawEvents) || rawEvents.length === 0) {
+      issues.push(`${webhookLocation}.events must be a non-empty list of Stripe event identifiers.`);
+    } else {
+      rawEvents.forEach((event, eventIndex) => {
+        if (typeof event !== 'string' || !isStripeEventIdentifier(event)) {
+          issues.push(`${webhookLocation}.events[${eventIndex}] must be a valid Stripe event identifier.`);
+        }
+      });
     }
 
     if (!url || !Array.isArray(rawEvents)) {
@@ -334,6 +345,61 @@ function parseWebhooks(value: unknown, location: string, issues: string[]): Webh
 
     return [{ url, events: rawEvents as string[] }];
   });
+}
+
+function validateDerivedKeys(
+  accounts: Record<string, AccountConfig>,
+  apps: AppConfig[],
+  issues: string[]
+): void {
+  const runtimeKeys = new Map<string, string>();
+  const lookupKeys = new Map<string, string>();
+
+  for (const account of Object.values(accounts)) {
+    registerUniqueKey(runtimeKeys, envKey('STRIPE', account.alias, 'ACCOUNT_ID'), `accounts.${account.alias}.account_id`, 'runtime environment variable', issues);
+    if (account.apiKeyEnv) {
+      registerUniqueKey(runtimeKeys, envKey('STRIPE', account.alias, 'API_KEY_ENV'), `accounts.${account.alias}.api_key_env`, 'runtime environment variable', issues);
+    }
+  }
+
+  apps.forEach((app, appIndex) => {
+    app.products.forEach((product, productIndex) => {
+      productPrices(product).forEach((price) => {
+        const location = `apps[${appIndex}].products[${productIndex}].${price.kind}_price`;
+        registerUniqueKey(lookupKeys, lookupKey(app, product, price.kind), location, 'Stripe lookup key', issues);
+        registerUniqueKey(runtimeKeys, envKey('STRIPE', app.name, product.name, price.kind, 'LOOKUP_KEY'), location, 'runtime environment variable', issues);
+      });
+    });
+  });
+}
+
+function registerUniqueKey(
+  keys: Map<string, string>,
+  key: string,
+  location: string,
+  label: string,
+  issues: string[]
+): void {
+  const previousLocation = keys.get(key);
+  if (previousLocation) {
+    issues.push(`${location} derives duplicate ${label} "${key}" already derived by ${previousLocation}.`);
+    return;
+  }
+
+  keys.set(key, location);
+}
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (url.protocol === 'http:' || url.protocol === 'https:') && url.hostname.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function isStripeEventIdentifier(value: string): boolean {
+  return value === '*' || /^[a-z0-9_]+(?:\.[a-z0-9_]+)+$/.test(value);
 }
 
 function productPrices(product: ProductConfig): Array<{ kind: string; label: string; amount: number }> {
