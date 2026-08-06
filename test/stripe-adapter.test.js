@@ -66,6 +66,47 @@ test('syncStripeConfig executes supported Stripe setup and is idempotent', async
   assert.equal(hasStripeChanges(secondRun), false);
 });
 
+test('syncStripeConfig dry-runs drift in every managed portal feature', async () => {
+  const driftCases = [
+    ['customer update disabled', (features) => { features.customer_update.enabled = false; }],
+    ['customer allowed updates changed', (features) => { features.customer_update.allowed_updates = ['email']; }],
+    ['invoice history disabled', (features) => { features.invoice_history.enabled = false; }],
+    ['payment method update missing', (features) => { delete features.payment_method_update; }]
+  ];
+
+  for (const [name, introduceDrift] of driftCases) {
+    const client = createFakeStripeClient();
+    const env = { STRIPE_LEADFINDER_API_KEY: 'sk_test_example' };
+    await syncStripeConfig(config, () => client, { env, execute: true });
+    introduceDrift(client.portalConfigurations[0].features);
+
+    const result = await syncStripeConfig(config, () => client, { env });
+    const portalOperation = result.accounts[0].operations.find((item) => item.resource === 'portal');
+
+    assert.equal(portalOperation.kind, 'update', name);
+    assert.equal(portalOperation.executed, false, name);
+    assert.equal(client.calls.updatePortalConfiguration.length, 0, name);
+  }
+});
+
+test('syncStripeConfig repairs portal feature drift and is then idempotent', async () => {
+  const client = createFakeStripeClient();
+  const env = { STRIPE_LEADFINDER_API_KEY: 'sk_test_example' };
+  await syncStripeConfig(config, () => client, { env, execute: true });
+  client.portalConfigurations[0].features.invoice_history.enabled = false;
+
+  const repaired = await syncStripeConfig(config, () => client, { env, execute: true });
+  const portalOperation = repaired.accounts[0].operations.find((item) => item.resource === 'portal');
+
+  assert.equal(portalOperation.kind, 'update');
+  assert.equal(portalOperation.executed, true);
+  assert.equal(client.calls.updatePortalConfiguration.length, 1);
+  assert.equal(client.calls.updatePortalConfiguration[0].features.invoice_history.enabled, true);
+
+  const secondRun = await syncStripeConfig(config, () => client, { env });
+  assert.equal(hasStripeChanges(secondRun), false);
+});
+
 test('syncStripeConfig converts configured major-unit amounts using the currency precision', async () => {
   const currencyConfig = parseConfig(`
 accounts:
@@ -160,6 +201,7 @@ function createFakeStripeClient() {
 
   return {
     calls,
+    portalConfigurations,
     async listProducts() {
       return products;
     },
