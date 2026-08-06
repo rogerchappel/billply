@@ -294,7 +294,7 @@ can be found on later runs.
 | --- | --- | --- |
 | Products | Create and update managed products. | Does not delete products. |
 | Prices | Create recurring, one-time, and usage prices. Replaces changed prices by creating a new price and archiving the old price. | Price amounts are effectively versioned: if the amount changes, create a new price and archive the old one. Stripe says used prices cannot be deleted through the API. |
-| Customer portal | Create and update billing portal configurations. | Portal sessions still require application logic and real customer IDs. |
+| Customer portal | Create and reconcile billing portal configurations, including customer email/tax ID updates, invoice history, and payment-method updates. | Portal sessions still require application logic and real customer IDs. |
 | Webhook endpoints | Create and update endpoints and enabled events. | The receiving app, HTTPS deployment, signature verification, and secret storage remain outside billply. |
 | Checkout | Export deterministic lookup keys for Checkout integration. | The SaaS app must create sessions at runtime and own fulfillment. |
 | Account branding/business profile | Some connected-account fields are API-updatable. | Stripe says updating your own account should be done in the Dashboard. |
