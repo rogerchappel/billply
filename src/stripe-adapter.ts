@@ -81,7 +81,18 @@ type StripePortalConfiguration = {
     privacy_policy_url?: string | null;
     terms_of_service_url?: string | null;
   } | null;
-  features?: Record<string, unknown> | null;
+  features?: {
+    customer_update?: {
+      allowed_updates?: string[];
+      enabled?: boolean;
+    };
+    invoice_history?: {
+      enabled?: boolean;
+    };
+    payment_method_update?: {
+      enabled?: boolean;
+    };
+  } | null;
   metadata?: StripeMetadata | null;
   name?: string | null;
 };
@@ -618,6 +629,13 @@ function portalConfigurationMatches(existing: StripePortalConfiguration, desired
     && existing.business_profile?.headline === desired.business_profile.headline
     && nullable(existing.business_profile?.privacy_policy_url) === nullable(desired.business_profile.privacy_policy_url)
     && nullable(existing.business_profile?.terms_of_service_url) === nullable(desired.business_profile.terms_of_service_url)
+    && existing.features?.customer_update?.enabled === desired.features.customer_update.enabled
+    && sameStringSet(
+      existing.features?.customer_update?.allowed_updates ?? [],
+      desired.features.customer_update.allowed_updates
+    )
+    && existing.features?.invoice_history?.enabled === desired.features.invoice_history.enabled
+    && existing.features?.payment_method_update?.enabled === desired.features.payment_method_update.enabled
     && metadataIncludes(existing.metadata, desired.metadata);
 }
 
