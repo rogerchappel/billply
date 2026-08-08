@@ -123,6 +123,9 @@ apps:
       - name: US Pass
         currency: USD
         one_time_price: 29
+      - name: Kuwait Pass
+        currency: KWD
+        one_time_price: 1.234
 `);
   const client = createFakeStripeClient();
 
@@ -135,7 +138,8 @@ apps:
     client.calls.createPrice.map(({ currency, unit_amount }) => ({ currency, unit_amount })),
     [
       { currency: 'jpy', unit_amount: 500 },
-      { currency: 'usd', unit_amount: 2900 }
+      { currency: 'usd', unit_amount: 2900 },
+      { currency: 'kwd', unit_amount: 1234 }
     ]
   );
 });
