@@ -351,9 +351,10 @@ normalizes configured values to lowercase. A product may set its own
 
 Price amounts are configured in the currency's major unit. For example,
 `29` USD is sent to Stripe as `2900` cents, while `500` JPY is sent as `500`
-yen. Billply supports Stripe's zero-decimal currencies and the usual
-two-decimal currencies; configured amounts must fit that precision (so a
-fractional JPY amount is invalid).
+yen, and `1.234` KWD is sent as `1234` fils. Billply supports Stripe's
+zero-decimal currencies, three-decimal BHD, JOD, KWD, OMR, and TND, and the
+usual two-decimal currencies. Configured amounts must fit that precision, so
+a fractional JPY amount and a KWD amount with four decimal places are invalid.
 
 Webhook URLs must be absolute `http://` or `https://` URLs. Each webhook event
 must be `*` or a Stripe-style dot-separated identifier such as

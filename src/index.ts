@@ -59,8 +59,18 @@ const ZERO_DECIMAL_CURRENCIES = new Set([
   'ugx', 'vnd', 'vuv', 'xaf', 'xof', 'xpf'
 ]);
 
+const THREE_DECIMAL_CURRENCIES = new Set([
+  'bhd', 'jod', 'kwd', 'omr', 'tnd'
+]);
+
 export function currencyMinorUnitExponent(currency: string): number {
-  return ZERO_DECIMAL_CURRENCIES.has(currency.toLowerCase()) ? 0 : 2;
+  const normalizedCurrency = currency.toLowerCase();
+
+  if (ZERO_DECIMAL_CURRENCIES.has(normalizedCurrency)) {
+    return 0;
+  }
+
+  return THREE_DECIMAL_CURRENCIES.has(normalizedCurrency) ? 3 : 2;
 }
 
 export class ConfigError extends Error {

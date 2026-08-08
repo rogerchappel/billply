@@ -118,6 +118,27 @@ test('parseConfig rejects amounts finer than the currency minor unit', () => {
   );
 });
 
+test('parseConfig accepts three-decimal amounts for Stripe three-decimal currencies', () => {
+  for (const currency of ['BHD', 'JOD', 'KWD', 'OMR', 'TND']) {
+    const config = parseConfig(validConfig
+      .replace('        monthly_price: 29', `        currency: ${currency}\n        monthly_price: 1.234`));
+
+    assert.equal(config.apps[0].products[0].monthlyPrice, 1.234);
+  }
+});
+
+test('parseConfig rejects excess precision for Stripe three-decimal currencies', () => {
+  assert.throws(
+    () => parseConfig(validConfig
+      .replace('        monthly_price: 29', '        currency: KWD\n        monthly_price: 1.2345')),
+    (error) => {
+      assert.ok(error instanceof ConfigError);
+      assert.match(error.message, /monthly_price cannot have more than 3 decimal places for KWD/);
+      return true;
+    }
+  );
+});
+
 test('parseConfig rejects malformed and non-HTTP webhook URLs', () => {
   for (const url of ['not-a-url', 'ftp://example.com/webhook']) {
     assert.throws(
