@@ -183,7 +183,42 @@ test('syncStripeConfig refuses live keys unless explicitly allowed', async () =>
   );
 });
 
-function createFakeStripeClient() {
+test('syncStripeConfig verifies a matching authenticated account before resource reads', async () => {
+  const client = createFakeStripeClient({ accountId: 'acct_xxx' });
+
+  await syncStripeConfig(config, () => client, {
+    env: { STRIPE_LEADFINDER_API_KEY: 'sk_test_example' }
+  });
+
+  assert.equal(client.calls.retrieveAccount, 1);
+  assert.equal(client.calls.listProducts, 1);
+});
+
+test('syncStripeConfig fails closed before resource access when the authenticated account differs', async () => {
+  const client = createFakeStripeClient({ accountId: 'acct_other' });
+
+  await assert.rejects(
+    () => syncStripeConfig(config, () => client, {
+      env: { STRIPE_LEADFINDER_API_KEY: 'sk_test_example' },
+      execute: true
+    }),
+    (error) => {
+      assert(error instanceof ConfigError);
+      assert.match(error.message, /configured "acct_xxx"/);
+      assert.match(error.message, /authenticated "acct_other"/);
+      return true;
+    }
+  );
+
+  assert.equal(client.calls.retrieveAccount, 1);
+  assert.equal(client.calls.listProducts, 0);
+  assert.equal(client.calls.createProduct.length, 0);
+  assert.equal(client.calls.createPrice.length, 0);
+  assert.equal(client.calls.createPortalConfiguration.length, 0);
+  assert.equal(client.calls.createWebhookEndpoint.length, 0);
+});
+
+function createFakeStripeClient({ accountId = 'acct_xxx' } = {}) {
   let productSequence = 0;
   let priceSequence = 0;
   let portalSequence = 0;
@@ -193,6 +228,8 @@ function createFakeStripeClient() {
   const portalConfigurations = [];
   const webhookEndpoints = [];
   const calls = {
+    retrieveAccount: 0,
+    listProducts: 0,
     createProduct: [],
     updateProduct: [],
     createPrice: [],
@@ -206,7 +243,12 @@ function createFakeStripeClient() {
   return {
     calls,
     portalConfigurations,
+    async retrieveAccount() {
+      calls.retrieveAccount += 1;
+      return { id: accountId };
+    },
     async listProducts() {
+      calls.listProducts += 1;
       return products;
     },
     async createProduct(params) {

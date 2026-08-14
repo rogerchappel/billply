@@ -11,6 +11,7 @@ import {
 export type StripeBillingClientFactory = (account: AccountConfig, apiKey: string) => StripeBillingClient;
 
 export type StripeBillingClient = {
+  retrieveAccount(): Promise<StripeAccountIdentity>;
   listProducts(): Promise<StripeProduct[]>;
   createProduct(params: StripeProductParams): Promise<StripeProduct>;
   updateProduct(id: string, params: StripeProductUpdateParams): Promise<StripeProduct>;
@@ -23,6 +24,10 @@ export type StripeBillingClient = {
   listWebhookEndpoints(): Promise<StripeWebhookEndpoint[]>;
   createWebhookEndpoint(params: StripeWebhookEndpointParams): Promise<StripeWebhookEndpoint>;
   updateWebhookEndpoint(id: string, params: StripeWebhookEndpointParams): Promise<StripeWebhookEndpoint>;
+};
+
+type StripeAccountIdentity = {
+  id: string;
 };
 
 export type StripeSyncOptions = {
@@ -260,6 +265,14 @@ async function syncStripeAccount(
 ): Promise<StripeAccountSyncResult> {
   const operations: StripeOperation[] = [];
   const warnings: string[] = [];
+  const authenticatedAccount = await client.retrieveAccount();
+
+  if (authenticatedAccount.id !== account.accountId) {
+    throw new ConfigError([
+      `Stripe account mismatch for accounts.${account.alias}: configured "${account.accountId}", authenticated "${authenticatedAccount.id}".`
+    ]);
+  }
+
   const products = await client.listProducts();
   const portalConfigurations = await client.listPortalConfigurations();
   const webhookEndpoints = await client.listWebhookEndpoints();
