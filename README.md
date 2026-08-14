@@ -107,6 +107,12 @@ The local planner does not authenticate to Stripe. Commands that use Stripe
 (`plan --stripe`, `verify --stripe`, and `apply`) read the environment variable
 named by `accounts.<alias>.api_key_env`.
 
+Before reading or changing products, prices, portal configurations, or webhook
+endpoints, billply retrieves the account authenticated by that key and compares
+its ID with `accounts.<alias>.account_id`. If the IDs differ, the command stops
+without accessing billing resources and reports both the configured and
+authenticated account IDs. This guard applies to dry runs and executed changes.
+
 Authenticate like this:
 
 1. Create or choose a Stripe testing environment first.
