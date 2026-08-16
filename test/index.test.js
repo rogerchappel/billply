@@ -45,6 +45,44 @@ test('parseConfig normalizes accounts, apps, products, and webhooks', () => {
   assert.equal(config.apps[0].webhooks[0].events[0], 'checkout.session.completed');
 });
 
+test('parseConfig rejects unknown keys at every configuration object level', () => {
+  const cases = [
+    ['root_setting: true\n', 'root', 'root_setting'],
+    ['    account_typo: true\n', '    api_key_env: STRIPE_LEADFINDER_API_KEY\n', 'accounts.leadfinder.account_typo'],
+    ['    app_typo: true\n', '    terms_url: https://leadfinder.ai/terms\n', 'apps[0].app_typo'],
+    ['        yearly_prce: 990\n', '        yearly_price: 990\n', 'apps[0].products[1].yearly_prce'],
+    ['        webhook_typo: true\n', '        events:\n', 'apps[0].webhooks[0].webhook_typo']
+  ];
+
+  for (const [unknownLine, insertionPoint, location] of cases) {
+    const source = insertionPoint === 'root'
+      ? `${validConfig}${unknownLine}`
+      : validConfig.replace(insertionPoint, `${insertionPoint}${unknownLine}`);
+
+    assert.throws(
+      () => parseConfig(source),
+      (error) => {
+        assert.ok(error instanceof ConfigError);
+        assert.ok(error.issues.includes(`${location} is not a supported configuration key.`));
+        return true;
+      }
+    );
+  }
+});
+
+test('parseConfig does not silently drop a misspelled yearly price', () => {
+  assert.throws(
+    () => parseConfig(validConfig.replace('yearly_price', 'yearly_prce')),
+    (error) => {
+      assert.ok(error instanceof ConfigError);
+      assert.deepEqual(error.issues, [
+        'apps[0].products[1].yearly_prce is not a supported configuration key.'
+      ]);
+      return true;
+    }
+  );
+});
+
 test('parseConfig rejects unknown account references', () => {
   assert.throws(
     () => parseConfig(`
