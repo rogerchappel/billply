@@ -15,6 +15,9 @@ export const createStripeBillingClient: StripeBillingClientFactory = (_account: 
   });
 
   return {
+    async retrieveAccount() {
+      return await stripe.accounts.retrieveCurrent();
+    },
     async listProducts() {
       return await stripe.products.list({ limit: 100 }).autoPagingToArray({ limit: 10000 });
     },
