@@ -360,6 +360,13 @@ Webhook URLs must be absolute `http://` or `https://` URLs. Each webhook event
 must be `*` or a Stripe-style dot-separated identifier such as
 `checkout.session.completed`; empty or malformed identifiers are rejected.
 
+Configuration keys are strict at the root and inside each account, app,
+product, and webhook object. Unknown or misspelled keys fail validation with
+their full YAML path; for example, `yearly_prce` is reported as
+`apps[0].products[1].yearly_prce` instead of silently omitting that price.
+Run `pnpm exec tsx src/cli.ts verify --config <path>` before applying a changed
+configuration.
+
 App and product names (or a product's explicit `lookup_key`) must derive unique
 Stripe lookup keys and exported environment-variable names after normalization.
 For example, two monthly products named `Pro` in the same app are invalid

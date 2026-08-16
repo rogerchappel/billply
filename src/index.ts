@@ -54,6 +54,18 @@ export type PlanResult = {
 
 type UnknownRecord = Record<string, unknown>;
 
+const ROOT_KEYS = new Set(['accounts', 'apps']);
+const ACCOUNT_KEYS = new Set(['account_id', 'name', 'environment', 'api_key_env']);
+const APP_KEYS = new Set([
+  'name', 'stripe_account', 'support_email', 'privacy_url', 'terms_url',
+  'currency', 'products', 'webhooks'
+]);
+const PRODUCT_KEYS = new Set([
+  'name', 'lookup_key', 'currency', 'monthly_price', 'yearly_price',
+  'one_time_price', 'usage_price'
+]);
+const WEBHOOK_KEYS = new Set(['url', 'events']);
+
 const ZERO_DECIMAL_CURRENCIES = new Set([
   'bif', 'clp', 'djf', 'gnf', 'jpy', 'kmf', 'krw', 'mga', 'pyg', 'rwf',
   'ugx', 'vnd', 'vuv', 'xaf', 'xof', 'xpf'
@@ -111,6 +123,7 @@ export function parseConfig(source: string): BillplyConfig {
     throw new ConfigError(['Config must be a YAML object with accounts and apps.']);
   }
 
+  rejectUnknownKeys(parsed, ROOT_KEYS, '', issues);
   const accounts = parseAccounts(parsed.accounts, issues);
   const apps = parseApps(parsed.apps, accounts, issues);
   validateDerivedKeys(accounts, apps, issues);
@@ -210,6 +223,7 @@ function parseAccounts(value: unknown, issues: string[]): Record<string, Account
       continue;
     }
 
+    rejectUnknownKeys(rawAccount, ACCOUNT_KEYS, `accounts.${alias}`, issues);
     const accountId = readRequiredString(rawAccount, 'account_id', `accounts.${alias}`, issues);
     const name = readOptionalString(rawAccount, 'name', `accounts.${alias}`, issues);
     const environment = readOptionalString(rawAccount, 'environment', `accounts.${alias}`, issues);
@@ -237,6 +251,7 @@ function parseApps(value: unknown, accounts: Record<string, AccountConfig>, issu
       return [];
     }
 
+    rejectUnknownKeys(rawApp, APP_KEYS, location, issues);
     const name = readRequiredString(rawApp, 'name', location, issues);
     const stripeAccount = readRequiredString(rawApp, 'stripe_account', location, issues);
     const supportEmail = readOptionalString(rawApp, 'support_email', location, issues);
@@ -281,6 +296,7 @@ function parseProducts(value: unknown, defaultCurrency: string, location: string
       return [];
     }
 
+    rejectUnknownKeys(rawProduct, PRODUCT_KEYS, productLocation, issues);
     const name = readRequiredString(rawProduct, 'name', productLocation, issues);
     const lookupKeyValue = readOptionalString(rawProduct, 'lookup_key', productLocation, issues);
     const currency = readOptionalCurrency(rawProduct, 'currency', productLocation, issues) ?? defaultCurrency;
@@ -332,6 +348,7 @@ function parseWebhooks(value: unknown, location: string, issues: string[]): Webh
       return [];
     }
 
+    rejectUnknownKeys(rawWebhook, WEBHOOK_KEYS, webhookLocation, issues);
     const url = readRequiredString(rawWebhook, 'url', webhookLocation, issues);
     const rawEvents = rawWebhook.events;
 
@@ -355,6 +372,20 @@ function parseWebhooks(value: unknown, location: string, issues: string[]): Webh
 
     return [{ url, events: rawEvents as string[] }];
   });
+}
+
+function rejectUnknownKeys(
+  value: UnknownRecord,
+  allowedKeys: ReadonlySet<string>,
+  location: string,
+  issues: string[]
+): void {
+  for (const key of Object.keys(value)) {
+    if (!allowedKeys.has(key)) {
+      const keyLocation = location ? `${location}.${key}` : key;
+      issues.push(`${keyLocation} is not a supported configuration key.`);
+    }
+  }
 }
 
 function validateDerivedKeys(
