@@ -7,6 +7,11 @@ format and uses semantic versioning when versioned releases are published.
 
 ## [Unreleased]
 
+### Changed
+
+- Refreshed Stripe to 22.5.0, tsx to 4.23.12, and the Node.js type
+  definitions to 22.20.1.
+
 ### Added
 
 - Initial project setup.
