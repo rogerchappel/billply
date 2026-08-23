@@ -38,9 +38,13 @@ billply --help
 For local development without a global install:
 
 ```sh
-pnpm install
+pnpm install --frozen-lockfile
 pnpm build
 ```
+
+pnpm is the only supported package manager for source checkouts. Keep
+`pnpm-lock.yaml` in sync with `package.json`; npm, Yarn, and Bun lockfiles are
+rejected by `pnpm lockfile:check` and the release checks.
 
 ## Use
 

@@ -63,6 +63,10 @@ jobs:
         if: hashFiles('package.json') != ''
         run: pnpm install --frozen-lockfile
 
+      - name: Validate package-manager policy
+        if: hashFiles('package.json') != ''
+        run: pnpm lockfile:check
+
       - name: Run local validation
         if: hashFiles('scripts/validate.sh') != ''
         run: bash scripts/validate.sh

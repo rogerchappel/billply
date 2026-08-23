@@ -28,12 +28,13 @@
   "scripts": {
     "dev": "tsx src/cli.ts",
     "build": "tsc",
+    "lockfile:check": "node scripts/verify-package-manager.mjs",
     "check": "tsc --noEmit",
     "test": "pnpm build && node --test test/*.test.js",
     "smoke": "pnpm exec tsx src/cli.ts plan --config examples/billply.yaml && pnpm exec tsx src/cli.ts verify --config examples/billply.yaml && pnpm exec tsx src/cli.ts export --config examples/billply.yaml",
     "package:smoke": "npm run build && node scripts/verify-package.mjs && npm pack --dry-run",
     "docs:install:smoke": "node scripts/verify-docs-install.mjs",
-    "release:check": "pnpm check && pnpm test && pnpm smoke && pnpm run package:smoke && pnpm run docs:install:smoke",
+    "release:check": "pnpm lockfile:check && pnpm check && pnpm test && pnpm smoke && pnpm run package:smoke && pnpm run docs:install:smoke",
     "lint": "npm run check"
   },
   "keywords": [
