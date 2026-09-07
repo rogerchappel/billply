@@ -369,6 +369,10 @@ a fractional JPY amount and a KWD amount with four decimal places are invalid.
 Webhook URLs must be absolute `http://` or `https://` URLs. Each webhook event
 must be `*` or a Stripe-style dot-separated identifier such as
 `checkout.session.completed`; empty or malformed identifiers are rejected.
+Within one configured Stripe account, each webhook URL must belong to exactly
+one app. Reusing a URL across apps is rejected even when their event lists are
+identical, preventing successive app reconciliations from rewriting one Stripe
+endpoint's metadata or enabled events.
 
 Configuration keys are strict at the root and inside each account, app,
 product, and webhook object. Unknown or misspelled keys fail validation with
