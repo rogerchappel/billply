@@ -395,6 +395,7 @@ function validateDerivedKeys(
 ): void {
   const runtimeKeys = new Map<string, string>();
   const lookupKeys = new Map<string, string>();
+  const webhookOwners = new Map<string, string>();
 
   for (const account of Object.values(accounts)) {
     registerUniqueKey(runtimeKeys, envKey('STRIPE', account.alias, 'ACCOUNT_ID'), `accounts.${account.alias}.account_id`, 'runtime environment variable', issues);
@@ -410,6 +411,18 @@ function validateDerivedKeys(
         registerUniqueKey(lookupKeys, lookupKey(app, product, price.kind), location, 'Stripe lookup key', issues);
         registerUniqueKey(runtimeKeys, envKey('STRIPE', app.name, product.name, price.kind, 'LOOKUP_KEY'), location, 'runtime environment variable', issues);
       });
+    });
+
+    app.webhooks.forEach((webhook, webhookIndex) => {
+      const location = `apps[${appIndex}].webhooks[${webhookIndex}].url`;
+      const ownershipKey = `${app.stripeAccount}\0${webhook.url}`;
+      const previousLocation = webhookOwners.get(ownershipKey);
+
+      if (previousLocation) {
+        issues.push(`${location} duplicates webhook URL "${webhook.url}" for Stripe account "${app.stripeAccount}" already configured by ${previousLocation}.`);
+      } else {
+        webhookOwners.set(ownershipKey, location);
+      }
     });
   });
 }
