@@ -203,6 +203,36 @@ test('parseConfig rejects empty and malformed webhook event identifiers', () => 
   }
 });
 
+test('parseConfig rejects duplicate webhook URLs within one Stripe account', () => {
+  for (const events of [
+    ['checkout.session.completed'],
+    ['customer.subscription.updated']
+  ]) {
+    const duplicateApp = `
+  - name: Another App
+    stripe_account: leadfinder
+    products:
+      - name: Basic
+        monthly_price: 10
+    webhooks:
+      - url: https://leadfinder.ai/api/stripe/webhook
+        events:
+${events.map((event) => `          - ${event}`).join('\n')}
+`;
+
+    assert.throws(
+      () => parseConfig(`${validConfig}${duplicateApp}`),
+      (error) => {
+        assert.ok(error instanceof ConfigError);
+        assert.deepEqual(error.issues, [
+          'apps[1].webhooks[0].url duplicates webhook URL "https://leadfinder.ai/api/stripe/webhook" for Stripe account "leadfinder" already configured by apps[0].webhooks[0].url.'
+        ]);
+        return true;
+      }
+    );
+  }
+});
+
 test('parseConfig rejects duplicate derived lookup and runtime keys', () => {
   assert.throws(
     () => parseConfig(validConfig.replace(
