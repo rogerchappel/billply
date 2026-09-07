@@ -9,6 +9,8 @@ format and uses semantic versioning when versioned releases are published.
 
 ### Changed
 
+- Reject duplicate webhook URLs within one Stripe account so endpoint
+  reconciliation has one deterministic app owner.
 - Refreshed Stripe to 22.5.0, tsx to 4.23.12, and the Node.js type
   definitions to 22.20.1.
 
