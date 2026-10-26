@@ -12,8 +12,12 @@ permissions:
 
 jobs:
   repository-hygiene:
-    name: Repository hygiene
+    name: Repository hygiene (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20, 24]
 
     steps:
       - name: Check out repository
@@ -27,7 +31,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
           cache: pnpm
 
       - name: Activate the declared pnpm version
