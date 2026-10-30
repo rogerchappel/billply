@@ -59,7 +59,7 @@ jobs:
           while IFS= read -r -d '' file; do
             markdown_count=$((markdown_count + 1))
             test -s "$file"
-          done < <(find . -type f -name '*.md' -not -path './.git/*' -print0)
+          done < <(git ls-files -z -- '*.md')
 
           if [ "$markdown_count" -eq 0 ]; then
             echo "No markdown files found."
