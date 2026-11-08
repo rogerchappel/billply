@@ -29,6 +29,7 @@
     "dev": "tsx src/cli.ts",
     "build": "tsc",
     "lockfile:check": "node scripts/verify-package-manager.mjs",
+    "ci:workflow:check": "node scripts/verify-ci-workflow.mjs",
     "check": "tsc --noEmit",
     "test": "pnpm build && node --test test/*.test.js",
     "smoke": "pnpm exec tsx src/cli.ts plan --config examples/billply.yaml && pnpm exec tsx src/cli.ts verify --config examples/billply.yaml && pnpm exec tsx src/cli.ts export --config examples/billply.yaml",
