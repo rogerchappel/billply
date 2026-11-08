@@ -37,6 +37,9 @@ jobs:
       - name: Activate the declared pnpm version
         run: corepack prepare pnpm@9.15.0 --activate
 
+      - name: Validate CI workflow contract
+        run: pnpm run ci:workflow:check
+
       - name: Validate required project files
         run: |
           set -euo pipefail
