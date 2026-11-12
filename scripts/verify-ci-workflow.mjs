@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
 const required = [
   /^permissions:\s*\n  contents: read\s*$/m,
+  /^          node-version: \$\{\{ matrix\.node-version \}\}$/m,
+  /^        node-version: \[20, 22, 24\]$/m,
   /^      - name: Check out repository$/m,
   /^      - name: Install dependencies$/m,
   /^      - name: Validate package-manager policy$/m,
