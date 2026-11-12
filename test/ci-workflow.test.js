@@ -30,6 +30,7 @@ test('CI workflow contract rejects removed required setup and verification steps
     original.replace('pnpm run package:smoke --if-present', 'echo omitted'),
     original.replace('npm ci', 'npm install'),
     original.replace('pnpm run check --if-present', 'pnpm run lint --if-present'),
+    original.replace('pnpm run release:check', 'pnpm run lint'),
     original.replace('pnpm test --if-present', 'pnpm run lint --if-present'),
     original.replace('pnpm run build --if-present', 'pnpm run lint --if-present'),
     original.replace('pnpm run smoke --if-present', 'pnpm run lint --if-present'),
